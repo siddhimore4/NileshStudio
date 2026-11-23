@@ -1,0 +1,1203 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nilesh Studio — Studio Owner & Business Management Portal</title>
+    <link rel="icon" type="image/png" href="logo.png" />
+    <link rel="apple-touch-icon" href="logo.png" />
+    <!-- Google Fonts & Tailwind -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              studio: {
+                950: '#07080B',
+                900: '#0D0E15',
+                850: '#13151F',
+                800: '#191B28',
+                750: '#202334',
+                700: '#2A2E44',
+                500: '#5D648E',
+                400: '#8A92BF',
+                200: '#DDE2F5',
+              },
+              gold: {
+                400: '#E4BF59',
+                500: '#D4AF37',
+                600: '#B89223',
+              }
+            },
+            fontFamily: {
+              display: ['Cinzel', 'serif'],
+              sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      .text-gold-gradient {
+        background: linear-gradient(135deg, #F4E6BC 0%, #D4AF37 50%, #B89223 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+    </style>
+  </head>
+  <body class="bg-studio-950 text-studio-200 font-sans min-h-screen">
+    <!-- Top Header -->
+    <header class="bg-studio-900 border-b border-gold-500/20 px-6 py-4 sticky top-0 z-30 shadow-lg">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <img src="logo.png" alt="Nilesh Studio Logo" class="w-11 h-11 rounded-full object-cover ring-2 ring-gold-400/60 shadow-md bg-black" />
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="font-display font-bold text-lg text-gold-gradient tracking-wider">
+                NILESH STUDIO
+              </span>
+              <span class="text-[10px] bg-gold-500/20 text-gold-400 border border-gold-500/30 px-2 py-0.5 rounded uppercase font-semibold">
+                Studio Owner Portal
+              </span>
+            </div>
+            <p class="text-xs text-studio-400">Appointment Management, QR Code Settings & Manual Payment Verification</p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <div class="text-right hidden sm:block">
+            <span class="text-xs text-studio-400 block">Database Status:</span>
+            <span class="text-xs font-mono text-emerald-400 font-semibold" id="backendStatus">Connected (SQLite)</span>
+          </div>
+          <button onclick="refreshData()" class="bg-studio-800 hover:bg-studio-750 border border-gold-500/30 text-gold-400 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1 transition-colors">
+            <span>↻ Refresh</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-6 py-6">
+      <!-- KPI Stats Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        <div class="bg-studio-900 border border-studio-800 rounded-2xl p-4">
+          <span class="text-xs text-studio-400 font-medium block">Total Bookings</span>
+          <span class="text-2xl font-display font-bold text-white mt-1 block" id="statTotal">0</span>
+        </div>
+        <div class="bg-studio-900 border border-amber-500/40 bg-amber-950/10 rounded-2xl p-4">
+          <span class="text-xs text-amber-400 font-bold block">Payment Verification</span>
+          <span class="text-2xl font-display font-bold text-amber-400 mt-1 block" id="statPayPending">0</span>
+          <span class="text-[10px] text-amber-500/90 block mt-0.5">Needs UTR approval</span>
+        </div>
+        <div class="bg-studio-900 border border-emerald-500/40 bg-emerald-950/10 rounded-2xl p-4">
+          <span class="text-xs text-emerald-400 font-bold block">Revenue Collected</span>
+          <span class="text-2xl font-display font-bold text-emerald-400 mt-1 block" id="statRevenue">₹0</span>
+          <span class="text-[10px] text-emerald-500/90 block mt-0.5"><span id="statPaidCount">0</span> Verified Payments</span>
+        </div>
+        <div class="bg-studio-900 border border-blue-500/40 rounded-2xl p-4">
+          <span class="text-xs text-blue-400 font-bold block">Pay After Shoot</span>
+          <span class="text-2xl font-display font-bold text-blue-400 mt-1 block" id="statPayAfter">0</span>
+          <span class="text-[10px] text-blue-500/90 block mt-0.5">Payment due at studio</span>
+        </div>
+        <div class="bg-studio-900 border border-purple-500/40 rounded-2xl p-4">
+          <span class="text-xs text-purple-400 font-bold block">Pending Bookings</span>
+          <span class="text-2xl font-display font-bold text-purple-400 mt-1 block" id="statPending">0</span>
+          <span class="text-[10px] text-purple-400/80 block mt-0.5">Awaiting confirmation</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs: Bookings List vs Daily Schedule vs QR Code Settings -->
+      <div class="flex items-center space-x-3 mb-6 border-b border-studio-800 pb-3 overflow-x-auto">
+        <button
+          onclick="switchTab('bookings')"
+          id="tabBtnBookings"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-gold-500 text-studio-950 shadow shrink-0"
+        >
+          📋 Customer Bookings & Payments
+        </button>
+        <button
+          onclick="switchTab('schedule')"
+          id="tabBtnSchedule"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-studio-900 text-studio-400 hover:text-white border border-studio-800 shrink-0"
+        >
+          📅 Daily Schedule & Slot Blocker
+        </button>
+        <button
+          onclick="switchTab('qr-settings')"
+          id="tabBtnQrSettings"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-studio-900 text-studio-400 hover:text-white border border-studio-800 shrink-0"
+        >
+          💳 Studio UPI QR Code Settings
+        </button>
+      </div>
+
+      <!-- VIEW 1: BOOKINGS & PAYMENTS LIST -->
+      <div id="viewBookings">
+        <!-- Filters & Search Toolbar -->
+        <div class="bg-studio-900 border border-studio-800 rounded-2xl p-4 mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <button onclick="setStatusFilter('All')" id="btnFilterAll" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gold-500 text-studio-950">
+              All Bookings
+            </button>
+            <button onclick="setStatusFilter('PendingVerification')" id="btnFilterPendingVerification" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-studio-800 text-amber-300 hover:text-white border border-amber-500/30">
+              ⏳ Verify Payments
+            </button>
+            <button onclick="setStatusFilter('Pending')" id="btnFilterPending" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-studio-800 text-studio-300 hover:text-white">
+              Pending Booking
+            </button>
+            <button onclick="setStatusFilter('Confirmed')" id="btnFilterConfirmed" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-studio-800 text-studio-300 hover:text-white">
+              Confirmed
+            </button>
+            <button onclick="setStatusFilter('Completed')" id="btnFilterCompleted" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-studio-800 text-studio-300 hover:text-white">
+              Completed
+            </button>
+            <button onclick="setStatusFilter('Cancelled')" id="btnFilterCancelled" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-studio-800 text-studio-300 hover:text-white">
+              Cancelled
+            </button>
+          </div>
+
+          <div class="flex items-center space-x-2 w-full md:w-auto">
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="Search name, phone, UTR, ID..."
+              oninput="handleSearch()"
+              class="bg-studio-950 border border-studio-750 rounded-xl px-3.5 py-1.5 text-xs text-white placeholder-studio-500 outline-none w-full md:w-64"
+            />
+          </div>
+        </div>
+
+        <!-- Bookings Table -->
+        <div class="bg-studio-900 border border-studio-800 rounded-2xl overflow-hidden shadow-xl">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-studio-300">
+              <thead class="bg-studio-950/80 text-studio-400 uppercase text-[10px] tracking-wider border-b border-studio-800">
+                <tr>
+                  <th class="py-3.5 px-4">Booking ID</th>
+                  <th class="py-3.5 px-4">Customer Details</th>
+                  <th class="py-3.5 px-4">Service & Slot</th>
+                  <th class="py-3.5 px-4">Pricing & Payment</th>
+                  <th class="py-3.5 px-4">UTR & Proof</th>
+                  <th class="py-3.5 px-4">Status</th>
+                  <th class="py-3.5 px-4 text-right">Owner Actions</th>
+                </tr>
+              </thead>
+              <tbody id="bookingsTableBody" class="divide-y divide-studio-800/60 font-medium">
+                <tr>
+                  <td colspan="7" class="py-8 text-center text-studio-500">
+                    Loading bookings from database...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: DAILY SCHEDULE & SLOT CONTROL -->
+      <div id="viewSchedule" class="hidden">
+        <div class="bg-studio-900 border border-studio-800 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center space-x-3 w-full sm:w-auto">
+            <label class="text-xs font-bold text-studio-300 uppercase tracking-wider">
+              Select Schedule Date:
+            </label>
+            <input
+              type="date"
+              id="scheduleDatePicker"
+              onchange="fetchDailySchedule()"
+              class="bg-studio-950 border border-studio-750 rounded-xl px-3.5 py-2 text-xs text-white outline-none focus:border-gold-500"
+            />
+          </div>
+
+          <div class="flex items-center space-x-4 text-xs">
+            <div class="flex items-center space-x-1.5">
+              <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+              <span class="text-studio-300">Available</span>
+            </div>
+            <div class="flex items-center space-x-1.5">
+              <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+              <span class="text-studio-300">Booked by Client</span>
+            </div>
+            <div class="flex items-center space-x-1.5">
+              <span class="w-3 h-3 rounded-full bg-purple-500 inline-block"></span>
+              <span class="text-studio-300">Blocked by Studio</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-studio-900 border border-studio-800 rounded-2xl p-6 shadow-xl">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-display font-bold text-lg text-white" id="scheduleDateTitle">
+                Daily Slot Availability
+              </h3>
+              <p class="text-xs text-studio-400">
+                Manage appointment times. Click any slot to view client details, reschedule, or block/unblock.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5" id="scheduleSlotsGrid"></div>
+        </div>
+      </div>
+
+      <!-- VIEW 3: STUDIO UPI QR CODE SETTINGS -->
+      <div id="viewQrSettings" class="hidden">
+        <div class="max-w-3xl mx-auto bg-studio-900 border border-gold-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl">
+          <div class="flex items-center justify-between border-b border-studio-800 pb-4 mb-6">
+            <div>
+              <h3 class="font-display font-bold text-xl text-white">
+                Studio UPI Payment & QR Code Settings
+              </h3>
+              <p class="text-xs text-studio-400 mt-0.5">
+                Upload your studio's official UPI QR Code. It will be displayed directly to customers who choose the 20% Advance Discount option.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+            <!-- Active QR Code Preview -->
+            <div class="bg-studio-950 p-5 rounded-2xl border border-studio-800 flex flex-col items-center text-center">
+              <span class="text-xs font-bold uppercase tracking-wider text-gold-400 mb-3">
+                Current Active QR Code
+              </span>
+              <div class="p-3 bg-white rounded-xl shadow-lg border border-gold-500/40 mb-3">
+                <img
+                  id="previewActiveQr"
+                  src=""
+                  alt="Current Studio QR"
+                  class="w-48 h-48 object-contain rounded"
+                />
+              </div>
+              <span class="text-xs font-bold text-white" id="previewUpiName">Nilesh Studio Fine Art</span>
+              <span class="text-xs font-mono text-studio-400 mt-0.5" id="previewUpiId">nileshstudio@upi</span>
+            </div>
+
+            <!-- Upload / Replace Form -->
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-studio-200 mb-1.5">
+                  Studio UPI ID (VPA) <span class="text-gold-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="settingUpiId"
+                  placeholder="e.g. nileshstudio@upi or 9876543210@paytm"
+                  class="w-full bg-studio-950 border border-studio-750 focus:border-gold-500 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono outline-none"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-studio-200 mb-1.5">
+                  Studio Payee Name <span class="text-gold-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="settingUpiName"
+                  placeholder="e.g. Nilesh Studio"
+                  class="w-full bg-studio-950 border border-studio-750 focus:border-gold-500 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-studio-200 mb-1.5">
+                  Upload New QR Code Image (PNG, JPG, SVG)
+                </label>
+                <label class="w-full flex flex-col items-center justify-center border-2 border-dashed border-studio-700 hover:border-gold-500 bg-studio-950/80 rounded-xl p-5 cursor-pointer transition-colors text-center">
+                  <span class="text-xs font-semibold text-gold-400 mb-1">Click to Select QR Code Image File</span>
+                  <span class="text-[11px] text-studio-500" id="uploadFileName">Supports PNG, JPG, JPEG, SVG up to 5MB</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    id="settingQrFile"
+                    onchange="handleQrFileSelect(event)"
+                    class="hidden"
+                  />
+                </label>
+              </div>
+
+              <button
+                type="button"
+                onclick="savePaymentSettings()"
+                id="btnSaveQrSettings"
+                class="w-full bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-400 hover:to-gold-500 text-studio-950 font-bold py-3 px-6 rounded-xl shadow-glow-gold transition-all text-xs"
+              >
+                Save & Update QR Code
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW PAYMENT SCREENSHOT MODAL -->
+    <div id="screenshotModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md hidden">
+      <div class="bg-studio-900 border border-gold-500/40 rounded-3xl p-6 max-w-lg w-full shadow-2xl relative">
+        <div class="flex items-center justify-between pb-3 border-b border-studio-800 mb-4">
+          <h3 class="font-display font-bold text-base text-white">Customer Payment Proof Screenshot</h3>
+          <button onclick="closeScreenshotModal()" class="text-studio-400 hover:text-white text-lg font-bold">✕</button>
+        </div>
+        <div class="bg-black rounded-xl p-2 max-h-[70vh] overflow-auto flex items-center justify-center mb-4 border border-studio-800">
+          <img id="modalScreenshotImg" src="" alt="Payment Screenshot" class="max-w-full max-h-[65vh] object-contain rounded" />
+        </div>
+        <div class="text-right">
+          <button onclick="closeScreenshotModal()" class="bg-studio-800 text-studio-200 px-4 py-2 rounded-xl text-xs font-semibold hover:bg-studio-750">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REJECT PAYMENT MODAL -->
+    <div id="rejectPaymentModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden">
+      <div class="bg-studio-900 border border-rose-500/40 rounded-3xl p-6 max-w-sm w-full shadow-2xl relative">
+        <h3 class="font-display font-bold text-base text-rose-400 mb-1">Reject Payment Submission</h3>
+        <p class="text-xs text-studio-400 mb-4">
+          Provide a reason for rejecting this payment (e.g. UTR not found on bank statement, payment amount mismatch).
+        </p>
+        <div class="mb-4">
+          <label class="block text-xs font-semibold text-studio-300 mb-1">Rejection Reason</label>
+          <input
+            type="text"
+            id="rejectPaymentReason"
+            placeholder="e.g. UTR not found on bank statement"
+            class="w-full bg-studio-950 border border-studio-750 focus:border-rose-500 rounded-xl px-3.5 py-2 text-xs text-white outline-none"
+          />
+        </div>
+        <div class="flex space-x-3">
+          <button type="button" onclick="closeRejectModal()" class="flex-1 py-2.5 rounded-xl bg-studio-800 text-studio-300 font-semibold text-xs">Cancel</button>
+          <button type="button" onclick="confirmRejectPayment()" class="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow">Reject Payment</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESCHEDULE APPOINTMENT MODAL -->
+    <div id="rescheduleModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden">
+      <div class="bg-studio-900 border border-gold-500/40 rounded-3xl p-6 max-w-md w-full shadow-2xl relative">
+        <h3 class="font-display font-bold text-lg text-white mb-1">
+          Reschedule Photoshoot Appointment
+        </h3>
+        <p class="text-xs text-studio-400 mb-4">
+          Move an already-booked client to a new date and time slot.
+        </p>
+
+        <div class="p-3 bg-studio-950 rounded-xl border border-studio-800 text-xs mb-4 space-y-1">
+          <div class="flex justify-between">
+            <span class="text-studio-500">Booking ID:</span>
+            <span class="font-mono text-gold-400 font-bold" id="rescheduleModalBookingId">--</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-studio-500">Customer:</span>
+            <span class="font-bold text-white" id="rescheduleModalCustomerName">--</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-studio-500">Current Slot:</span>
+            <span class="text-studio-300 font-semibold" id="rescheduleModalCurrentSlot">--</span>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-xs font-semibold text-studio-300 uppercase tracking-wider mb-1">
+            Select New Date
+          </label>
+          <input
+            type="date"
+            id="rescheduleDatePicker"
+            onchange="loadRescheduleSlots()"
+            class="w-full bg-studio-950 border border-studio-750 focus:border-gold-500 rounded-xl px-3.5 py-2 text-xs text-white outline-none"
+          />
+        </div>
+
+        <div class="mb-5">
+          <label class="block text-xs font-semibold text-studio-300 uppercase tracking-wider mb-1.5">
+            Select New Time Slot
+          </label>
+          <div id="rescheduleSlotsContainer" class="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1 bg-studio-950 rounded-xl border border-studio-800">
+            <span class="text-studio-500 text-xs p-3 text-center col-span-3">Select a date above to check available slots</span>
+          </div>
+        </div>
+
+        <div class="flex space-x-3">
+          <button
+            type="button"
+            onclick="closeRescheduleModal()"
+            class="flex-1 py-2.5 rounded-xl bg-studio-800 text-studio-300 font-semibold text-xs hover:bg-studio-750"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onclick="submitReschedule()"
+            id="btnConfirmReschedule"
+            class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-400 hover:to-gold-500 text-studio-950 font-bold text-xs shadow transition-colors disabled:opacity-50"
+          >
+            Confirm New Time
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BLOCK SLOT MODAL -->
+    <div id="blockModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden">
+      <div class="bg-studio-900 border border-gold-500/40 rounded-3xl p-6 max-w-sm w-full shadow-2xl relative">
+        <h3 class="font-display font-bold text-lg text-white mb-1">
+          Block Out Time Slot
+        </h3>
+        <p class="text-xs text-studio-400 mb-4">
+          Reserve this slot for studio maintenance, personal leave, or private sessions. Customers will see it as BOOKED.
+        </p>
+
+        <div class="p-3 bg-studio-950 rounded-xl border border-studio-800 text-xs mb-4 space-y-1">
+          <div class="flex justify-between">
+            <span class="text-studio-500">Date:</span>
+            <span class="text-white font-bold" id="blockModalDate">--</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-studio-500">Time Slot:</span>
+            <span class="font-bold text-gold-400" id="blockModalSlot">--</span>
+          </div>
+        </div>
+
+        <div class="mb-5">
+          <label class="block text-xs font-semibold text-studio-300 uppercase tracking-wider mb-1.5">
+            Reason for Blocking
+          </label>
+          <input
+            type="text"
+            id="blockModalReason"
+            placeholder="e.g. Studio Maintenance, Lunch Break, Private Event"
+            class="w-full bg-studio-950 border border-studio-750 focus:border-gold-500 rounded-xl px-3.5 py-2 text-xs text-white outline-none"
+          />
+        </div>
+
+        <div class="flex space-x-3">
+          <button
+            type="button"
+            onclick="closeBlockModal()"
+            class="flex-1 py-2.5 rounded-xl bg-studio-800 text-studio-300 font-semibold text-xs hover:bg-studio-750"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onclick="submitBlockSlot()"
+            class="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow transition-colors"
+          >
+            Block This Slot
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-studio-900 border border-gold-500/40 text-gold-300 text-xs py-3 px-5 rounded-2xl shadow-2xl">
+      Status updated successfully.
+    </div>
+
+    <script>
+      let currentFilter = 'All';
+      let searchQuery = '';
+      const API_HOST = window.location.origin;
+
+      let activeRescheduleBooking = null;
+      let selectedRescheduleSlot = null;
+      let targetBlockDate = null;
+      let targetBlockSlot = null;
+      let targetRejectBookingId = null;
+      let uploadedQrBase64 = null;
+
+      // Tab switcher
+      function switchTab(tab) {
+        const viewBookings = document.getElementById('viewBookings');
+        const viewSchedule = document.getElementById('viewSchedule');
+        const viewQrSettings = document.getElementById('viewQrSettings');
+
+        const tabBtnBookings = document.getElementById('tabBtnBookings');
+        const tabBtnSchedule = document.getElementById('tabBtnSchedule');
+        const tabBtnQrSettings = document.getElementById('tabBtnQrSettings');
+
+        // Reset all
+        viewBookings.classList.add('hidden');
+        viewSchedule.classList.add('hidden');
+        viewQrSettings.classList.add('hidden');
+
+        tabBtnBookings.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-studio-900 text-studio-400 hover:text-white border border-studio-800 shrink-0';
+        tabBtnSchedule.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-studio-900 text-studio-400 hover:text-white border border-studio-800 shrink-0';
+        tabBtnQrSettings.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-studio-900 text-studio-400 hover:text-white border border-studio-800 shrink-0';
+
+        if (tab === 'bookings') {
+          viewBookings.classList.remove('hidden');
+          tabBtnBookings.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-gold-500 text-studio-950 shadow shrink-0';
+          fetchBookings();
+        } else if (tab === 'schedule') {
+          viewSchedule.classList.remove('hidden');
+          tabBtnSchedule.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-gold-500 text-studio-950 shadow shrink-0';
+          if (!document.getElementById('scheduleDatePicker').value) {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('scheduleDatePicker').value = today;
+          }
+          fetchDailySchedule();
+        } else if (tab === 'qr-settings') {
+          viewQrSettings.classList.remove('hidden');
+          tabBtnQrSettings.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-gold-500 text-studio-950 shadow shrink-0';
+          loadStudioQrSettings();
+        }
+      }
+
+      async function fetchStats() {
+        try {
+          const res = await fetch(`${API_HOST}/api/business/stats`);
+          const data = await res.json();
+          if (data.success) {
+            document.getElementById('statTotal').innerText = data.stats.total;
+            document.getElementById('statPending').innerText = data.stats.pending;
+            document.getElementById('statPayPending').innerText = data.stats.paymentsPendingVerification || 0;
+            document.getElementById('statRevenue').innerText = `₹${(data.stats.totalRevenue || 0).toLocaleString()}`;
+            document.getElementById('statPaidCount').innerText = data.stats.paymentsPaid || 0;
+            document.getElementById('statPayAfter').innerText = data.stats.paymentsPayAfterShoot || 0;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      async function fetchBookings() {
+        const tbody = document.getElementById('bookingsTableBody');
+        try {
+          let url = `${API_HOST}/api/business/bookings?`;
+          if (currentFilter === 'PendingVerification') {
+            // filtered client side or backend
+          } else if (currentFilter !== 'All') {
+            url += `status=${encodeURIComponent(currentFilter)}&`;
+          }
+          if (searchQuery) url += `search=${encodeURIComponent(searchQuery)}&`;
+
+          const res = await fetch(url);
+          const data = await res.json();
+
+          let bookings = data.bookings || [];
+          if (currentFilter === 'PendingVerification') {
+            bookings = bookings.filter(b => b.payment_status === 'Verification Pending');
+          }
+
+          if (!data.success || bookings.length === 0) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="7" class="py-10 text-center text-studio-400">
+                  No bookings found for the selected filter.
+                </td>
+              </tr>
+            `;
+            return;
+          }
+
+          tbody.innerHTML = bookings.map(b => {
+            const statusClass = {
+              'Pending': 'bg-amber-400/10 text-amber-400 border border-amber-400/30',
+              'Confirmed': 'bg-emerald-400/10 text-emerald-400 border border-emerald-400/30',
+              'Completed': 'bg-blue-400/10 text-blue-400 border border-blue-400/30',
+              'Cancelled': 'bg-rose-400/10 text-rose-400 border border-rose-400/30'
+            }[b.status] || 'bg-gray-800 text-gray-300';
+
+            const payStatusBadge = {
+              'Paid': '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Paid</span>',
+              'Verification Pending': '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/40 animate-pulse">Verification Pending</span>',
+              'Payment Rejected': '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/40">Rejected</span>',
+              'Pay After Shoot': '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/30">Pay After Shoot</span>'
+            }[b.payment_status] || `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-800 text-gray-400">${b.payment_status || 'Unpaid'}</span>`;
+
+            const bookingJson = JSON.stringify(b).replace(/"/g, '&quot;');
+            const screenshotAttr = b.payment_screenshot_url ? JSON.stringify(b.payment_screenshot_url).replace(/"/g, '&quot;') : null;
+
+            return `
+              <tr class="hover:bg-studio-850/60 transition-colors">
+                <td class="py-3 px-4 font-mono font-bold text-gold-400">
+                  ${b.id}
+                  <span class="block text-[10px] text-studio-500 font-sans">${new Date(b.created_at).toLocaleDateString()}</span>
+                </td>
+                <td class="py-3 px-4">
+                  <span class="font-bold text-white block">${b.customer_name}</span>
+                  <span class="text-studio-400 text-[11px]">+91 ${b.phone_number}</span>
+                  ${b.email ? `<span class="text-studio-500 text-[10px] block">${b.email}</span>` : ''}
+                </td>
+                <td class="py-3 px-4">
+                  <span class="text-white font-semibold">${b.category_name}</span>
+                  ${b.subcategory_name ? `<span class="text-gold-300 text-[11px] block">${b.subcategory_name}</span>` : ''}
+                  <span class="text-studio-400 text-[11px] block mt-0.5">${b.booking_date} at ${b.time_slot}</span>
+                </td>
+                <td class="py-3 px-4">
+                  <div class="flex items-center space-x-1.5 font-mono">
+                    ${b.discount_amount && b.discount_amount > 0 ? `
+                      <span class="line-through text-studio-500 text-[10px]">₹${b.original_amount?.toLocaleString()}</span>
+                      <span class="text-[9px] text-emerald-400 font-bold bg-emerald-500/10 px-1 rounded">-20%</span>
+                    ` : ''}
+                    <span class="font-bold text-gold-300 text-xs">₹${(b.final_payable_amount || b.original_amount || 0).toLocaleString()}</span>
+                  </div>
+                  <div class="mt-1">${payStatusBadge}</div>
+                </td>
+                <td class="py-3 px-4">
+                  ${b.upi_transaction_id ? `
+                    <div class="font-mono text-xs text-white bg-studio-950 px-2 py-0.5 rounded border border-studio-800 inline-block font-bold">
+                      ${b.upi_transaction_id}
+                    </div>
+                  ` : '<span class="text-studio-600 italic text-[11px]">N/A</span>'}
+                  ${b.payment_screenshot_url ? `
+                    <div class="mt-1">
+                      <button onclick="viewScreenshot(${screenshotAttr})" class="text-[10px] font-bold text-gold-400 hover:text-gold-300 hover:underline">
+                        📷 View Screenshot
+                      </button>
+                    </div>
+                  ` : ''}
+                  ${b.payment_rejection_reason ? `
+                    <span class="block text-[10px] text-rose-400 mt-1 max-w-[140px] truncate" title="${b.payment_rejection_reason}">
+                      Reason: ${b.payment_rejection_reason}
+                    </span>
+                  ` : ''}
+                </td>
+                <td class="py-3 px-4">
+                  <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${statusClass}">
+                    ${b.status}
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-right">
+                  <div class="flex flex-col items-end space-y-1">
+                    <!-- Payment Actions -->
+                    ${b.payment_status === 'Verification Pending' ? `
+                      <div class="flex items-center space-x-1">
+                        <button onclick="verifyPayment('${b.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-0.5 rounded-lg text-[10px] font-bold transition-colors">
+                          ✓ Approve Payment
+                        </button>
+                        <button onclick="openRejectModal('${b.id}')" class="bg-rose-900/60 hover:bg-rose-800 text-rose-200 px-2 py-0.5 rounded-lg text-[10px] font-bold transition-colors">
+                          ✕ Reject
+                        </button>
+                      </div>
+                    ` : ''}
+                    ${b.payment_status === 'Pay After Shoot' && b.status !== 'Cancelled' ? `
+                      <button onclick="markPaidAfterShoot('${b.id}')" class="bg-blue-600 hover:bg-blue-500 text-white px-2 py-0.5 rounded-lg text-[10px] font-bold transition-colors">
+                        Mark Paid
+                      </button>
+                    ` : ''}
+
+                    <!-- Booking Actions -->
+                    <div class="flex items-center space-x-1 mt-0.5">
+                      ${b.status === 'Pending' ? `
+                        <button onclick="updateStatus('${b.id}', 'Confirmed')" class="bg-studio-800 hover:bg-emerald-600 text-emerald-300 hover:text-white px-2 py-0.5 rounded text-[10px] font-semibold border border-studio-700">
+                          Confirm Booking
+                        </button>
+                      ` : ''}
+                      ${b.status === 'Confirmed' ? `
+                        <button onclick="updateStatus('${b.id}', 'Completed')" class="bg-studio-800 hover:bg-blue-600 text-blue-300 hover:text-white px-2 py-0.5 rounded text-[10px] font-semibold border border-studio-700">
+                          Complete
+                        </button>
+                      ` : ''}
+                      ${b.status !== 'Cancelled' ? `
+                        <button onclick="openRescheduleModal(${bookingJson})" class="bg-studio-800 hover:bg-gold-500 hover:text-studio-950 text-gold-400 px-2 py-0.5 rounded text-[10px] font-semibold border border-studio-700">
+                          Reschedule
+                        </button>
+                        <button onclick="updateStatus('${b.id}', 'Cancelled')" class="text-rose-400 hover:text-rose-300 text-[10px] font-semibold ml-1">
+                          Cancel
+                        </button>
+                      ` : '<span class="text-studio-500 text-[10px]">Cancelled</span>'}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      // Load Studio QR Code Settings into view 3
+      async function loadStudioQrSettings() {
+        try {
+          const res = await fetch(`${API_HOST}/api/payment/settings`);
+          const data = await res.json();
+          if (data.success && data.settings) {
+            document.getElementById('previewActiveQr').src = data.settings.qrCodeUrl;
+            document.getElementById('previewUpiId').innerText = data.settings.upiId;
+            document.getElementById('previewUpiName').innerText = data.settings.upiName;
+            document.getElementById('settingUpiId').value = data.settings.upiId;
+            document.getElementById('settingUpiName').value = data.settings.upiName;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      function handleQrFileSelect(e) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        document.getElementById('uploadFileName').innerText = `Selected: ${file.name} (${Math.round(file.size / 1024)} KB)`;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          uploadedQrBase64 = event.target?.result;
+          document.getElementById('previewActiveQr').src = uploadedQrBase64;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      async function savePaymentSettings() {
+        const upiId = document.getElementById('settingUpiId').value.trim();
+        const upiName = document.getElementById('settingUpiName').value.trim();
+        const btn = document.getElementById('btnSaveQrSettings');
+
+        if (!upiId || !upiName) {
+          alert('UPI ID and Payee Name are required');
+          return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = 'Saving QR Code to Database...';
+
+        try {
+          const res = await fetch(`${API_HOST}/api/business/payment/settings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              upiId,
+              upiName,
+              qrCodeUrl: uploadedQrBase64 || undefined
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast('Studio UPI QR Code & Settings Updated Successfully!');
+            loadStudioQrSettings();
+          } else {
+            alert(data.error || 'Failed to update settings');
+          }
+        } catch (e) {
+          alert('Network error saving QR code');
+        } finally {
+          btn.disabled = false;
+          btn.innerText = 'Save & Update QR Code';
+        }
+      }
+
+      // Verify customer payment
+      async function verifyPayment(id) {
+        if (!confirm(`Verify and approve advance payment for booking ${id}? This marks payment as PAID.`)) return;
+        try {
+          const res = await fetch(`${API_HOST}/api/business/bookings/${id}/payment/verify`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ verifiedBy: 'Studio Owner' })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast(`Payment for booking ${id} marked as PAID!`);
+            refreshData();
+          } else {
+            alert(data.error || 'Failed to verify payment');
+          }
+        } catch (e) {
+          alert('Network error verifying payment');
+        }
+      }
+
+      // Reject customer payment
+      function openRejectModal(id) {
+        targetRejectBookingId = id;
+        document.getElementById('rejectPaymentReason').value = 'Payment not received on bank statement / Invalid UTR';
+        document.getElementById('rejectPaymentModal').classList.remove('hidden');
+      }
+
+      function closeRejectModal() {
+        document.getElementById('rejectPaymentModal').classList.add('hidden');
+        targetRejectBookingId = null;
+      }
+
+      async function confirmRejectPayment() {
+        if (!targetRejectBookingId) return;
+        const reason = document.getElementById('rejectPaymentReason').value.trim() || 'Payment not verified';
+        try {
+          const res = await fetch(`${API_HOST}/api/business/bookings/${targetRejectBookingId}/payment/reject`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason, verifiedBy: 'Studio Owner' })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast(`Payment for booking ${targetRejectBookingId} rejected`);
+            closeRejectModal();
+            refreshData();
+          } else {
+            alert(data.error || 'Failed to reject payment');
+          }
+        } catch (e) {
+          alert('Error rejecting payment');
+        }
+      }
+
+      // Mark pay after shoot as paid
+      async function markPaidAfterShoot(id) {
+        if (!confirm(`Mark booking ${id} as PAID? (Confirm that customer completed shoot and paid in cash or UPI)`)) return;
+        try {
+          const res = await fetch(`${API_HOST}/api/business/bookings/${id}/payment/mark-paid`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ verifiedBy: 'Studio Owner' })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast(`Booking ${id} marked as PAID!`);
+            refreshData();
+          } else {
+            alert(data.error || 'Failed to mark paid');
+          }
+        } catch (e) {
+          alert('Error updating payment status');
+        }
+      }
+
+      // View screenshot
+      function viewScreenshot(url) {
+        if (!url) return;
+        document.getElementById('modalScreenshotImg').src = url;
+        document.getElementById('screenshotModal').classList.remove('hidden');
+      }
+
+      function closeScreenshotModal() {
+        document.getElementById('screenshotModal').classList.add('hidden');
+        document.getElementById('modalScreenshotImg').src = '';
+      }
+
+      // Fetch Daily Schedule (All 21 slots with status)
+      async function fetchDailySchedule() {
+        const date = document.getElementById('scheduleDatePicker').value;
+        if (!date) return;
+        document.getElementById('scheduleDateTitle').innerText = `Daily Schedule for ${date}`;
+
+        const grid = document.getElementById('scheduleSlotsGrid');
+        grid.innerHTML = '<div class="col-span-full py-6 text-center text-studio-400 text-xs">Loading schedule...</div>';
+
+        try {
+          const res = await fetch(`${API_HOST}/api/business/schedule?date=${encodeURIComponent(date)}`);
+          const data = await res.json();
+          if (!data.success) throw new Error(data.error);
+
+          grid.innerHTML = data.schedule.map(slot => {
+            if (slot.type === 'client_booking') {
+              const b = slot.booking;
+              const bookingJson = JSON.stringify(b).replace(/"/g, '&quot;');
+              return `
+                <div class="p-3.5 rounded-xl border border-amber-500/40 bg-amber-950/20 flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center justify-between mb-1">
+                      <span class="font-bold text-sm text-gold-300">${slot.time}</span>
+                      <span class="text-[10px] bg-amber-400/20 text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded font-bold uppercase">
+                        Booked: ${b.status}
+                      </span>
+                    </div>
+                    <div class="text-xs text-white font-semibold truncate">${b.customer_name}</div>
+                    <div class="text-[11px] text-studio-400">+91 ${b.phone_number}</div>
+                    <div class="text-[10px] text-gold-400/80 truncate">${b.category_name}</div>
+                    <div class="text-[10px] text-studio-300 mt-1 font-mono">₹${(b.final_payable_amount || b.original_amount || 0).toLocaleString()} • ${b.payment_status || 'Unpaid'}</div>
+                  </div>
+                  <div class="mt-3 pt-2 border-t border-amber-500/20 flex justify-between items-center text-[11px]">
+                    <span class="font-mono text-studio-500 text-[10px]">${b.id}</span>
+                    <button onclick="openRescheduleModal(${bookingJson})" class="text-gold-400 hover:text-gold-300 font-bold hover:underline">
+                      Reschedule →
+                    </button>
+                  </div>
+                </div>
+              `;
+            } else if (slot.type === 'studio_blocked') {
+              return `
+                <div class="p-3.5 rounded-xl border border-purple-500/40 bg-purple-950/20 flex flex-col justify-between">
+                  <div>
+                    <div class="flex items-center justify-between mb-1">
+                      <span class="font-bold text-sm text-purple-300">${slot.time}</span>
+                      <span class="text-[10px] bg-purple-400/20 text-purple-300 border border-purple-400/30 px-2 py-0.5 rounded font-bold uppercase">
+                        Studio Blocked
+                      </span>
+                    </div>
+                    <div class="text-xs text-studio-300 font-medium">
+                      Reason: ${slot.blockedReason || 'Reserved'}
+                    </div>
+                  </div>
+                  <div class="mt-3 pt-2 border-t border-purple-500/20 flex justify-end">
+                    <button onclick="unblockSlot('${slot.date}', '${slot.time}')" class="text-xs text-rose-400 hover:text-rose-300 font-bold hover:underline">
+                      Unblock Slot
+                    </button>
+                  </div>
+                </div>
+              `;
+            } else {
+              return `
+                <div class="p-3.5 rounded-xl border border-studio-800 bg-studio-950/60 hover:border-gold-500/40 flex flex-col justify-between transition-colors">
+                  <div>
+                    <div class="flex items-center justify-between mb-1">
+                      <span class="font-bold text-sm text-studio-200">${slot.time}</span>
+                      <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-bold uppercase">
+                        Available
+                      </span>
+                    </div>
+                    <p class="text-[11px] text-studio-500">Open for customer appointment</p>
+                  </div>
+                  <div class="mt-3 pt-2 border-t border-studio-800/80 flex justify-end">
+                    <button onclick="openBlockModal('${slot.date}', '${slot.time}')" class="text-[11px] text-studio-400 hover:text-purple-300 font-semibold hover:underline">
+                      + Block Slot
+                    </button>
+                  </div>
+                </div>
+              `;
+            }
+          }).join('');
+        } catch (e) {
+          grid.innerHTML = `<div class="col-span-full py-6 text-center text-rose-400 text-xs">Error: ${e.message}</div>`;
+        }
+      }
+
+      // Reschedule Modal Logic
+      function openRescheduleModal(booking) {
+        activeRescheduleBooking = booking;
+        selectedRescheduleSlot = null;
+
+        document.getElementById('rescheduleModalBookingId').innerText = booking.id;
+        document.getElementById('rescheduleModalCustomerName').innerText = `${booking.customer_name} (+91 ${booking.phone_number})`;
+        document.getElementById('rescheduleModalCurrentSlot').innerText = `${booking.booking_date} at ${booking.time_slot}`;
+        
+        document.getElementById('rescheduleDatePicker').value = booking.booking_date;
+        document.getElementById('rescheduleModal').classList.remove('hidden');
+        loadRescheduleSlots();
+      }
+
+      function closeRescheduleModal() {
+        document.getElementById('rescheduleModal').classList.add('hidden');
+        activeRescheduleBooking = null;
+        selectedRescheduleSlot = null;
+      }
+
+      async function loadRescheduleSlots() {
+        const date = document.getElementById('rescheduleDatePicker').value;
+        const container = document.getElementById('rescheduleSlotsContainer');
+        if (!date) return;
+
+        container.innerHTML = '<span class="text-studio-500 text-xs p-3 text-center col-span-3">Checking availability...</span>';
+
+        try {
+          const res = await fetch(`${API_HOST}/api/slots/availability?date=${encodeURIComponent(date)}`);
+          const data = await res.json();
+          if (!data.success) throw new Error(data.error);
+
+          container.innerHTML = data.slots.map(slot => {
+            const isSameAsCurrent = (date === activeRescheduleBooking.booking_date && slot.time === activeRescheduleBooking.time_slot);
+            const isAvailable = !slot.isBooked || isSameAsCurrent;
+
+            return `
+              <button
+                type="button"
+                ${!isAvailable ? 'disabled' : ''}
+                onclick="selectRescheduleSlot('${slot.time}', this)"
+                class="p-2 rounded-lg text-xs font-semibold border transition-all text-center ${
+                  !isAvailable
+                    ? 'bg-studio-950 text-studio-600 border-studio-850 cursor-not-allowed opacity-40'
+                    : isSameAsCurrent
+                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                    : 'bg-studio-900 text-studio-200 border-studio-800 hover:border-gold-500/60'
+                }"
+              >
+                ${slot.time}
+                ${isSameAsCurrent ? '<span class="block text-[8px] font-normal text-amber-400">Current</span>' : ''}
+              </button>
+            `;
+          }).join('');
+        } catch (e) {
+          container.innerHTML = `<span class="text-rose-400 text-xs p-3 text-center col-span-3">Error loading slots</span>`;
+        }
+      }
+
+      function selectRescheduleSlot(slotTime, btnElement) {
+        selectedRescheduleSlot = slotTime;
+        const buttons = document.querySelectorAll('#rescheduleSlotsContainer button');
+        buttons.forEach(b => {
+          if (!b.disabled) {
+            b.classList.remove('bg-gold-500', 'text-studio-950', 'border-gold-400');
+            b.classList.add('bg-studio-900', 'text-studio-200');
+          }
+        });
+        btnElement.classList.remove('bg-studio-900', 'text-studio-200');
+        btnElement.classList.add('bg-gold-500', 'text-studio-950', 'border-gold-400');
+      }
+
+      async function submitReschedule() {
+        if (!activeRescheduleBooking || !selectedRescheduleSlot) {
+          alert('Please select a new time slot.');
+          return;
+        }
+
+        const newDate = document.getElementById('rescheduleDatePicker').value;
+        const btn = document.getElementById('btnConfirmReschedule');
+        btn.disabled = true;
+        btn.innerText = 'Updating...';
+
+        try {
+          const res = await fetch(`${API_HOST}/api/business/bookings/${activeRescheduleBooking.id}/reschedule`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              newDate,
+              newTimeSlot: selectedRescheduleSlot
+            })
+          });
+
+          const data = await res.json();
+          if (data.success) {
+            showToast(`Appointment ${activeRescheduleBooking.id} moved to ${newDate} at ${selectedRescheduleSlot}`);
+            closeRescheduleModal();
+            refreshData();
+          } else {
+            alert(data.error || 'Failed to reschedule');
+          }
+        } catch (e) {
+          alert('Error rescheduling appointment');
+        } finally {
+          btn.disabled = false;
+          btn.innerText = 'Confirm New Time';
+        }
+      }
+
+      // Block Slot Modal Logic
+      function openBlockModal(date, slot) {
+        targetBlockDate = date;
+        targetBlockSlot = slot;
+        document.getElementById('blockModalDate').innerText = date;
+        document.getElementById('blockModalSlot').innerText = slot;
+        document.getElementById('blockModalReason').value = '';
+        document.getElementById('blockModal').classList.remove('hidden');
+      }
+
+      function closeBlockModal() {
+        document.getElementById('blockModal').classList.add('hidden');
+        targetBlockDate = null;
+        targetBlockSlot = null;
+      }
+
+      async function submitBlockSlot() {
+        const reason = document.getElementById('blockModalReason').value || 'Studio Maintenance / Reserved';
+        try {
+          const res = await fetch(`${API_HOST}/api/business/slots/block`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              date: targetBlockDate,
+              timeSlot: targetBlockSlot,
+              reason
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast(`Slot ${targetBlockSlot} on ${targetBlockDate} is now blocked`);
+            closeBlockModal();
+            fetchDailySchedule();
+          } else {
+            alert(data.error || 'Failed to block slot');
+          }
+        } catch (e) {
+          alert('Error blocking slot');
+        }
+      }
+
+      async function unblockSlot(date, slot) {
+        if (!confirm(`Unblock ${slot} on ${date} to make it available for customers again?`)) return;
+        try {
+          const res = await fetch(`${API_HOST}/api/business/slots/unblock`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ date, timeSlot: slot })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast(`Slot ${slot} is now available for customer booking`);
+            fetchDailySchedule();
+          } else {
+            alert(data.error || 'Failed to unblock slot');
+          }
+        } catch (e) {
+          alert('Error unblocking slot');
+        }
+      }
+
+      // Update Booking Status
+      async function updateStatus(id, newStatus) {
+        let msg = `Are you sure you want to change booking ${id} status to ${newStatus}?`;
+        if (newStatus === 'Cancelled') {
+          msg = `Are you sure you want to Cancel booking ${id}? This will immediately FREE UP the slot in the database for other customers.`;
+        }
+        if (!confirm(msg)) return;
+
+        try {
+          const res = await fetch(`${API_HOST}/api/business/bookings/${id}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast(`Booking ${id} is now ${newStatus}`);
+            refreshData();
+          } else {
+            alert(data.error || 'Failed to update status');
+          }
+        } catch (err) {
+          alert('Network error updating status');
+        }
+      }
+
+      function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.classList.remove('translate-y-20', 'opacity-0');
+        setTimeout(() => {
+          toast.classList.add('translate-y-20', 'opacity-0');
+        }, 3000);
+      }
+
+      function setStatusFilter(filter) {
+        currentFilter = filter;
+        const buttons = ['All', 'PendingVerification', 'Pending', 'Confirmed', 'Completed', 'Cancelled'];
+        buttons.forEach(b => {
+          const btn = document.getElementById(`btnFilter${b}`);
+          if (btn) {
+            if (b === filter) {
+              btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-gold-500 text-studio-950';
+            } else {
+              btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-studio-800 text-studio-300 hover:text-white';
+            }
+          }
+        });
+        fetchBookings();
+      }
+
+      let debounceTimer = null;
+      function handleSearch() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          searchQuery = document.getElementById('searchInput').value.trim();
+          fetchBookings();
+        }, 250);
+      }
+
+      function refreshData() {
+        fetchStats();
+        fetchBookings();
+        if (!document.getElementById('viewSchedule').classList.contains('hidden')) {
+          fetchDailySchedule();
+        }
+        if (!document.getElementById('viewQrSettings').classList.contains('hidden')) {
+          loadStudioQrSettings();
+        }
+      }
+
+      // Initial Load
+      refreshData();
+    </script>
+  </body>
+</html>
