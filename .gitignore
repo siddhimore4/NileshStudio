@@ -1,24 +1,49 @@
 # Dependencies
 node_modules/
-.pnp
+/.pnp
 .pnp.js
 
-# Build logs
+# Production build outputs
+dist/
+build/
+android/app/build/
+android/build/
+android/.gradle/
+android/capacitor-cordova-android-plugins/build/
+
+# Android binaries and machine-specific files
+*.apk
+*.aab
+NileshStudio.apk
+android/local.properties
+.tools/
+
+# Environment and sensitive credential files
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.jks
+*.keystore
+
+# Database and runtime logs
+data/*.sqlite
+*.sqlite-journal
+*_backup_*.sqlite
+*_dump_*.json
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Environment
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# OS Files
-Thumbs.db
+# Editor and OS files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 .DS_Store
-
-# Temporary scripts
-*.tmp
+Thumbs.db

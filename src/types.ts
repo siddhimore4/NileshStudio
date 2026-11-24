@@ -4,6 +4,7 @@ export interface Customer {
   phoneNumber: string;
   email?: string | null;
   createdAt: string;
+  isGuest?: boolean;
 }
 
 export interface Subcategory {

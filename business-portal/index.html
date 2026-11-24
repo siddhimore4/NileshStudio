@@ -69,13 +69,16 @@
           </div>
         </div>
 
-        <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-3">
           <div class="text-right hidden sm:block">
-            <span class="text-xs text-studio-400 block">Database Status:</span>
+            <span class="text-xs text-studio-400 block">Database:</span>
             <span class="text-xs font-mono text-emerald-400 font-semibold" id="backendStatus">Connected (SQLite)</span>
           </div>
           <button onclick="refreshData()" class="bg-studio-800 hover:bg-studio-750 border border-gold-500/30 text-gold-400 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1 transition-colors">
             <span>↻ Refresh</span>
+          </button>
+          <button onclick="ownerLogout()" class="bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-300 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center space-x-1 transition-colors">
+            <span>🚪 Logout</span>
           </button>
         </div>
       </div>
@@ -132,6 +135,13 @@
           class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-studio-900 text-studio-400 hover:text-white border border-studio-800 shrink-0"
         >
           💳 Studio UPI QR Code Settings
+        </button>
+        <button
+          onclick="switchTab('gallery')"
+          id="tabBtnGallery"
+          class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-studio-900 text-studio-400 hover:text-white border border-studio-800 shrink-0"
+        >
+          📸 Categories & Galleries
         </button>
       </div>
 
@@ -332,6 +342,131 @@
           </div>
         </div>
       </div>
+
+      <!-- VIEW 4: CATEGORIES & GALLERIES MANAGEMENT -->
+      <div id="viewGallery" class="hidden">
+        <div class="bg-studio-900 border border-gold-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl mb-8">
+          <div class="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-studio-800 pb-4 mb-6 gap-4">
+            <div>
+              <h3 class="font-display font-bold text-xl text-white">
+                Photography Categories & Gallery Portfolio
+              </h3>
+              <p class="text-xs text-studio-400 mt-0.5">
+                Manage your studio portfolio photos. Changes update the customer mobile application in real time.
+              </p>
+            </div>
+            <button
+              onclick="toggleAddPhotoForm()"
+              class="bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-400 hover:to-gold-500 text-studio-950 font-bold px-4 py-2.5 rounded-xl text-xs flex items-center space-x-1.5 shadow transition-all"
+            >
+              <span>+ Add New Portfolio Photo</span>
+            </button>
+          </div>
+
+          <!-- Add Photo Form (Collapsible) -->
+          <div id="addPhotoFormCard" class="bg-studio-950 border border-gold-500/30 rounded-2xl p-5 mb-6 hidden">
+            <h4 class="font-bold text-sm text-gold-300 mb-3">Add / Upload Photos to Cloud Portfolio</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label class="block text-xs text-studio-400 mb-1">Target Category</label>
+                <select id="newPhotoCategory" onchange="onCategorySelectChange()" class="w-full bg-studio-900 border border-studio-750 focus:border-gold-500 rounded-xl px-3 py-2 text-xs text-white outline-none">
+                  <option value="indoor">Indoor Studio</option>
+                  <option value="outdoor">Outdoor Shoots</option>
+                  <option value="wedding">Wedding Photography</option>
+                  <option value="pre-wedding">Pre-Wedding Shoots</option>
+                </select>
+              </div>
+              <div id="subcatSelectContainer">
+                <label class="block text-xs text-studio-400 mb-1">Subcategory</label>
+                <select id="newPhotoSubcategory" class="w-full bg-studio-900 border border-studio-750 focus:border-gold-500 rounded-xl px-3 py-2 text-xs text-white outline-none">
+                  <option value="birthday">Birthday Shoots</option>
+                  <option value="maternity">Maternity Photography</option>
+                  <option value="festive">Festive Photography</option>
+                  <option value="newborn">Newborn Photography</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs text-studio-400 mb-1">Photo Title / Caption</label>
+                <input
+                  type="text"
+                  id="newPhotoTitle"
+                  placeholder="e.g. Royal Prince 1st Birthday"
+                  class="w-full bg-studio-900 border border-studio-750 focus:border-gold-500 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                />
+              </div>
+            </div>
+
+            <!-- Upload Area & URL option -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div class="p-4 bg-studio-900/60 border border-dashed border-gold-500/30 rounded-xl text-center">
+                <label class="block text-xs font-semibold text-gold-300 mb-2 cursor-pointer">
+                  📁 Select Images from Device (Multiple supported)
+                  <input
+                    type="file"
+                    id="newPhotoFileInput"
+                    accept="image/*"
+                    multiple
+                    onchange="onPhotoFilesSelected(this)"
+                    class="hidden"
+                  />
+                </label>
+                <div id="selectedFilesInfo" class="text-[11px] text-studio-400">Drag & drop or click to browse images</div>
+              </div>
+              <div>
+                <label class="block text-xs text-studio-400 mb-1">Or Direct Image URL (Optional)</label>
+                <input
+                  type="text"
+                  id="newPhotoUrl"
+                  placeholder="e.g. https://... or /images/..."
+                  class="w-full bg-studio-900 border border-studio-750 focus:border-gold-500 rounded-xl px-3 py-2.5 text-xs text-white outline-none"
+                />
+              </div>
+            </div>
+
+            <div class="flex justify-end space-x-3">
+              <button
+                type="button"
+                onclick="toggleAddPhotoForm()"
+                class="px-4 py-2 rounded-xl bg-studio-800 text-studio-300 text-xs font-semibold hover:bg-studio-750"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                id="btnSubmitPhoto"
+                onclick="submitNewGalleryPhoto()"
+                class="px-5 py-2 rounded-xl bg-gold-500 text-studio-950 text-xs font-bold hover:bg-gold-400 shadow flex items-center space-x-1.5"
+              >
+                <span>Upload to Portfolio</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Category Filter Pills -->
+          <div class="flex items-center space-x-2 mb-6 overflow-x-auto pb-2" id="galleryCategoryFilter">
+            <button onclick="filterGalleryCategory('All')" id="btnGalCatAll" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gold-500 text-studio-950 shrink-0">
+              All Photos (<span id="galCountAll">0</span>)
+            </button>
+            <button onclick="filterGalleryCategory('indoor')" id="btnGalCatindoor" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-studio-800 text-studio-400 hover:text-white shrink-0">
+              Indoor Studio
+            </button>
+            <button onclick="filterGalleryCategory('outdoor')" id="btnGalCatoutdoor" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-studio-800 text-studio-400 hover:text-white shrink-0">
+              Outdoor Shoots
+            </button>
+            <button onclick="filterGalleryCategory('wedding')" id="btnGalCatwedding" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-studio-800 text-studio-400 hover:text-white shrink-0">
+              Wedding Photography
+            </button>
+            <button onclick="filterGalleryCategory('pre-wedding')" id="btnGalCatpre-wedding" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-studio-800 text-studio-400 hover:text-white shrink-0">
+              Pre-Wedding Shoots
+            </button>
+          </div>
+
+          <!-- Gallery Photos Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4" id="galleryGrid">
+            <div class="col-span-full py-8 text-center text-studio-500 text-xs">Loading portfolio photos...</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- VIEW PAYMENT SCREENSHOT MODAL -->
@@ -493,6 +628,54 @@
       </div>
     </div>
 
+    <!-- OWNER LOGIN MODAL (GATEWAY) -->
+    <div id="ownerLoginOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
+      <div class="bg-studio-900 border border-gold-500/40 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-center">
+        <div class="w-20 h-20 mx-auto rounded-full ring-2 ring-gold-400/80 p-1 mb-4 bg-black flex items-center justify-center shadow-lg">
+          <img src="logo.png" alt="Nilesh Studio" class="w-full h-full object-cover rounded-full" />
+        </div>
+        <h2 class="font-display font-bold text-2xl text-gold-gradient tracking-wider mb-1">
+          NILESH STUDIO
+        </h2>
+        <p class="text-xs text-studio-400 mb-6 uppercase tracking-widest font-semibold">
+          Studio Owner Business Portal
+        </p>
+
+        <div id="loginError" class="hidden mb-4 p-3 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs font-medium"></div>
+
+        <form id="ownerLoginForm" onsubmit="handleOwnerLogin(event)" class="space-y-4 text-left">
+          <div>
+            <label class="block text-xs font-medium text-studio-300 mb-1.5">Owner Username</label>
+            <input
+              type="text"
+              id="loginUsername"
+              value="admin"
+              required
+              class="w-full bg-studio-950 border border-studio-750 focus:border-gold-500 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-studio-300 mb-1.5">Password / Security PIN</label>
+            <input
+              type="password"
+              id="loginPassword"
+              placeholder="Enter owner password"
+              required
+              class="w-full bg-studio-950 border border-studio-750 focus:border-gold-500 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none"
+            />
+            <p class="text-[11px] text-studio-500 mt-1">Default credentials: <code class="text-gold-400 font-mono">admin</code> / <code class="text-gold-400 font-mono">nilesh@2026</code></p>
+          </div>
+          <button
+            type="submit"
+            id="btnLoginSubmit"
+            class="w-full py-3 rounded-xl bg-gradient-to-r from-gold-500 via-gold-400 to-gold-600 text-studio-950 font-bold text-xs uppercase tracking-wider shadow-lg hover:brightness-110 transition-all mt-2"
+          >
+            Access Studio Dashboard →
+          </button>
+        </form>
+      </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-studio-900 border border-gold-500/40 text-gold-300 text-xs py-3 px-5 rounded-2xl shadow-2xl">
       Status updated successfully.
@@ -509,25 +692,99 @@
       let targetBlockSlot = null;
       let targetRejectBookingId = null;
       let uploadedQrBase64 = null;
+      let allGalleryItems = [];
+      let activeGalleryFilter = 'All';
+
+      // --- OWNER AUTHENTICATION SYSTEM ---
+      function getOwnerToken() {
+        return sessionStorage.getItem('nds_owner_token') || '';
+      }
+
+      function showOwnerLogin() {
+        document.getElementById('ownerLoginOverlay').classList.remove('hidden');
+      }
+
+      function hideOwnerLogin() {
+        document.getElementById('ownerLoginOverlay').classList.add('hidden');
+        document.getElementById('loginError').classList.add('hidden');
+      }
+
+      async function authFetch(url, options = {}) {
+        options.headers = options.headers || {};
+        const token = getOwnerToken();
+        if (token) {
+          options.headers['x-owner-token'] = token;
+          options.headers['Authorization'] = `Bearer ${token}`;
+        }
+        const res = await fetch(url, options);
+        if (res.status === 401 && !url.includes('/api/business/auth/login')) {
+          sessionStorage.removeItem('nds_owner_token');
+          showOwnerLogin();
+          throw new Error('Owner session expired. Please sign in again.');
+        }
+        return res;
+      }
+
+      async function handleOwnerLogin(e) {
+        e.preventDefault();
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value.trim();
+        const errEl = document.getElementById('loginError');
+        errEl.classList.add('hidden');
+
+        try {
+          const res = await fetch(`${API_HOST}/api/business/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            errEl.innerText = data.error || 'Invalid credentials. Please try again.';
+            errEl.classList.remove('hidden');
+            return;
+          }
+          sessionStorage.setItem('nds_owner_token', data.token);
+          hideOwnerLogin();
+          showToast('Welcome back, Studio Owner!');
+          refreshData();
+        } catch (err) {
+          errEl.innerText = err.message;
+          errEl.classList.remove('hidden');
+        }
+      }
+
+      async function ownerLogout() {
+        try {
+          await authFetch(`${API_HOST}/api/business/auth/logout`, { method: 'POST' });
+        } catch (e) {}
+        sessionStorage.removeItem('nds_owner_token');
+        showOwnerLogin();
+        showToast('Logged out of Business Portal');
+      }
 
       // Tab switcher
       function switchTab(tab) {
         const viewBookings = document.getElementById('viewBookings');
         const viewSchedule = document.getElementById('viewSchedule');
         const viewQrSettings = document.getElementById('viewQrSettings');
+        const viewGallery = document.getElementById('viewGallery');
 
         const tabBtnBookings = document.getElementById('tabBtnBookings');
         const tabBtnSchedule = document.getElementById('tabBtnSchedule');
         const tabBtnQrSettings = document.getElementById('tabBtnQrSettings');
+        const tabBtnGallery = document.getElementById('tabBtnGallery');
 
         // Reset all
         viewBookings.classList.add('hidden');
         viewSchedule.classList.add('hidden');
         viewQrSettings.classList.add('hidden');
+        if (viewGallery) viewGallery.classList.add('hidden');
 
         tabBtnBookings.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-studio-900 text-studio-400 hover:text-white border border-studio-800 shrink-0';
         tabBtnSchedule.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-studio-900 text-studio-400 hover:text-white border border-studio-800 shrink-0';
         tabBtnQrSettings.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-studio-900 text-studio-400 hover:text-white border border-studio-800 shrink-0';
+        if (tabBtnGallery) tabBtnGallery.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-studio-900 text-studio-400 hover:text-white border border-studio-800 shrink-0';
 
         if (tab === 'bookings') {
           viewBookings.classList.remove('hidden');
@@ -545,12 +802,16 @@
           viewQrSettings.classList.remove('hidden');
           tabBtnQrSettings.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-gold-500 text-studio-950 shadow shrink-0';
           loadStudioQrSettings();
+        } else if (tab === 'gallery') {
+          if (viewGallery) viewGallery.classList.remove('hidden');
+          if (tabBtnGallery) tabBtnGallery.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-gold-500 text-studio-950 shadow shrink-0';
+          loadCategoriesAndGalleries();
         }
       }
 
       async function fetchStats() {
         try {
-          const res = await fetch(`${API_HOST}/api/business/stats`);
+          const res = await authFetch(`${API_HOST}/api/business/stats`);
           const data = await res.json();
           if (data.success) {
             document.getElementById('statTotal').innerText = data.stats.total;
@@ -576,7 +837,7 @@
           }
           if (searchQuery) url += `search=${encodeURIComponent(searchQuery)}&`;
 
-          const res = await fetch(url);
+          const res = await authFetch(url);
           const data = await res.json();
 
           let bookings = data.bookings || [];
@@ -716,7 +977,7 @@
       // Load Studio QR Code Settings into view 3
       async function loadStudioQrSettings() {
         try {
-          const res = await fetch(`${API_HOST}/api/payment/settings`);
+          const res = await authFetch(`${API_HOST}/api/payment/settings`);
           const data = await res.json();
           if (data.success && data.settings) {
             document.getElementById('previewActiveQr').src = data.settings.qrCodeUrl;
@@ -756,7 +1017,7 @@
         btn.innerText = 'Saving QR Code to Database...';
 
         try {
-          const res = await fetch(`${API_HOST}/api/business/payment/settings`, {
+          const res = await authFetch(`${API_HOST}/api/business/payment/settings`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -784,7 +1045,7 @@
       async function verifyPayment(id) {
         if (!confirm(`Verify and approve advance payment for booking ${id}? This marks payment as PAID.`)) return;
         try {
-          const res = await fetch(`${API_HOST}/api/business/bookings/${id}/payment/verify`, {
+          const res = await authFetch(`${API_HOST}/api/business/bookings/${id}/payment/verify`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ verifiedBy: 'Studio Owner' })
@@ -817,7 +1078,7 @@
         if (!targetRejectBookingId) return;
         const reason = document.getElementById('rejectPaymentReason').value.trim() || 'Payment not verified';
         try {
-          const res = await fetch(`${API_HOST}/api/business/bookings/${targetRejectBookingId}/payment/reject`, {
+          const res = await authFetch(`${API_HOST}/api/business/bookings/${targetRejectBookingId}/payment/reject`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ reason, verifiedBy: 'Studio Owner' })
@@ -839,7 +1100,7 @@
       async function markPaidAfterShoot(id) {
         if (!confirm(`Mark booking ${id} as PAID? (Confirm that customer completed shoot and paid in cash or UPI)`)) return;
         try {
-          const res = await fetch(`${API_HOST}/api/business/bookings/${id}/payment/mark-paid`, {
+          const res = await authFetch(`${API_HOST}/api/business/bookings/${id}/payment/mark-paid`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ verifiedBy: 'Studio Owner' })
@@ -878,7 +1139,7 @@
         grid.innerHTML = '<div class="col-span-full py-6 text-center text-studio-400 text-xs">Loading schedule...</div>';
 
         try {
-          const res = await fetch(`${API_HOST}/api/business/schedule?date=${encodeURIComponent(date)}`);
+          const res = await authFetch(`${API_HOST}/api/business/schedule?date=${encodeURIComponent(date)}`);
           const data = await res.json();
           if (!data.success) throw new Error(data.error);
 
@@ -983,7 +1244,7 @@
         container.innerHTML = '<span class="text-studio-500 text-xs p-3 text-center col-span-3">Checking availability...</span>';
 
         try {
-          const res = await fetch(`${API_HOST}/api/slots/availability?date=${encodeURIComponent(date)}`);
+          const res = await authFetch(`${API_HOST}/api/slots/availability?date=${encodeURIComponent(date)}`);
           const data = await res.json();
           if (!data.success) throw new Error(data.error);
 
@@ -1039,7 +1300,7 @@
         btn.innerText = 'Updating...';
 
         try {
-          const res = await fetch(`${API_HOST}/api/business/bookings/${activeRescheduleBooking.id}/reschedule`, {
+          const res = await authFetch(`${API_HOST}/api/business/bookings/${activeRescheduleBooking.id}/reschedule`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1083,7 +1344,7 @@
       async function submitBlockSlot() {
         const reason = document.getElementById('blockModalReason').value || 'Studio Maintenance / Reserved';
         try {
-          const res = await fetch(`${API_HOST}/api/business/slots/block`, {
+          const res = await authFetch(`${API_HOST}/api/business/slots/block`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1108,7 +1369,7 @@
       async function unblockSlot(date, slot) {
         if (!confirm(`Unblock ${slot} on ${date} to make it available for customers again?`)) return;
         try {
-          const res = await fetch(`${API_HOST}/api/business/slots/unblock`, {
+          const res = await authFetch(`${API_HOST}/api/business/slots/unblock`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ date, timeSlot: slot })
@@ -1134,7 +1395,7 @@
         if (!confirm(msg)) return;
 
         try {
-          const res = await fetch(`${API_HOST}/api/business/bookings/${id}/status`, {
+          const res = await authFetch(`${API_HOST}/api/business/bookings/${id}/status`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: newStatus })
@@ -1186,6 +1447,10 @@
       }
 
       function refreshData() {
+        if (!getOwnerToken()) {
+          showOwnerLogin();
+          return;
+        }
         fetchStats();
         fetchBookings();
         if (!document.getElementById('viewSchedule').classList.contains('hidden')) {
@@ -1194,10 +1459,250 @@
         if (!document.getElementById('viewQrSettings').classList.contains('hidden')) {
           loadStudioQrSettings();
         }
+        const viewGallery = document.getElementById('viewGallery');
+        if (viewGallery && !viewGallery.classList.contains('hidden')) {
+          loadCategoriesAndGalleries();
+        }
       }
 
-      // Initial Load
-      refreshData();
+      // --- GALLERY & CATEGORY MANAGEMENT ---
+      function toggleAddPhotoForm() {
+        const form = document.getElementById('addPhotoFormCard');
+        if (form) form.classList.toggle('hidden');
+      }
+
+      async function loadCategoriesAndGalleries() {
+        const grid = document.getElementById('galleryGrid');
+        if (!grid) return;
+        grid.innerHTML = '<div class="col-span-full py-8 text-center text-studio-400 text-xs">Loading studio gallery photos...</div>';
+
+        try {
+          const res = await authFetch(`${API_HOST}/api/business/gallery/all`);
+          const data = await res.json();
+          if (!data.success) throw new Error(data.error || 'Failed to load gallery');
+          allGalleryItems = data.items || [];
+          document.getElementById('galCountAll').innerText = allGalleryItems.length;
+          renderGalleryGrid();
+        } catch (e) {
+          grid.innerHTML = `<div class="col-span-full py-8 text-center text-rose-400 text-xs">Error: ${e.message}</div>`;
+        }
+      }
+
+      function filterGalleryCategory(cat) {
+        activeGalleryFilter = cat;
+        const categories = ['All', 'indoor', 'outdoor', 'wedding', 'pre-wedding'];
+        categories.forEach(c => {
+          const btn = document.getElementById(`btnGalCat${c}`);
+          if (btn) {
+            if (c === cat) {
+              btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-gold-500 text-studio-950 shrink-0';
+            } else {
+              btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-studio-800 text-studio-400 hover:text-white shrink-0';
+            }
+          }
+        });
+        renderGalleryGrid();
+      }
+
+      function renderGalleryGrid() {
+        const grid = document.getElementById('galleryGrid');
+        if (!grid) return;
+
+        let filtered = allGalleryItems;
+        if (activeGalleryFilter !== 'All') {
+          filtered = allGalleryItems.filter(item => item.category_id === activeGalleryFilter);
+        }
+
+        if (filtered.length === 0) {
+          grid.innerHTML = '<div class="col-span-full py-12 text-center text-studio-500 text-xs">No photos in this category yet.</div>';
+          return;
+        }
+
+        grid.innerHTML = filtered.map(item => `
+          <div class="bg-studio-950 border border-studio-800 rounded-2xl overflow-hidden shadow-lg group hover:border-gold-500/40 transition-all flex flex-col justify-between">
+            <div class="relative aspect-[3/4] bg-black overflow-hidden">
+              <img src="${item.image_url}" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onerror="this.src='logo.png'" />
+              <div class="absolute top-2 left-2 bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-semibold text-gold-300">
+                ${item.category_name || item.category_id}
+              </div>
+            </div>
+            <div class="p-3">
+              <div class="font-semibold text-xs text-white truncate mb-1">${item.title}</div>
+              <div class="text-[10px] text-studio-500 truncate mb-2 font-mono">${item.image_url}</div>
+              <button
+                type="button"
+                onclick="deleteGalleryPhoto('${item.id}', '${item.title.replace(/'/g, "\\'")}')"
+                class="w-full py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-500/30 text-rose-300 text-[11px] font-medium transition-colors"
+              >
+                🗑 Delete Photo
+              </button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      let selectedPhotoFiles = [];
+
+      function onCategorySelectChange() {
+        const cat = document.getElementById('newPhotoCategory').value;
+        const subcatContainer = document.getElementById('subcatSelectContainer');
+        if (cat === 'wedding' || cat === 'pre-wedding') {
+          if (subcatContainer) subcatContainer.classList.add('hidden');
+        } else {
+          if (subcatContainer) subcatContainer.classList.remove('hidden');
+        }
+      }
+
+      function onPhotoFilesSelected(input) {
+        selectedPhotoFiles = Array.from(input.files || []);
+        const info = document.getElementById('selectedFilesInfo');
+        if (selectedPhotoFiles.length === 0) {
+          info.innerText = 'Drag & drop or click to browse images';
+        } else if (selectedPhotoFiles.length === 1) {
+          info.innerHTML = `<span class="text-gold-400 font-semibold">${selectedPhotoFiles[0].name}</span> (${(selectedPhotoFiles[0].size/1024).toFixed(0)} KB)`;
+        } else {
+          info.innerHTML = `<span class="text-gold-400 font-semibold">${selectedPhotoFiles.length} photos selected</span> for cloud upload`;
+        }
+      }
+
+      function fileToDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      async function submitNewGalleryPhoto() {
+        const categoryId = document.getElementById('newPhotoCategory').value;
+        const subcategoryId = (categoryId === 'wedding' || categoryId === 'pre-wedding')
+          ? null
+          : document.getElementById('newPhotoSubcategory').value;
+        const titleInput = document.getElementById('newPhotoTitle').value.trim();
+        const urlInput = document.getElementById('newPhotoUrl').value.trim();
+        const btn = document.getElementById('btnSubmitPhoto');
+
+        // Case 1: Uploading files directly to Cloud / Supabase Storage
+        if (selectedPhotoFiles.length > 0) {
+          btn.disabled = true;
+          btn.innerHTML = '<span>Uploading photos...</span>';
+          try {
+            let uploadedCount = 0;
+            for (let i = 0; i < selectedPhotoFiles.length; i++) {
+              const file = selectedPhotoFiles[i];
+              const fileData = await fileToDataUrl(file);
+              const photoTitle = titleInput
+                ? (selectedPhotoFiles.length > 1 ? `${titleInput} (${i + 1})` : titleInput)
+                : file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+
+              const res = await authFetch(`${API_HOST}/api/business/gallery/upload`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  categoryId,
+                  subcategoryId,
+                  title: photoTitle,
+                  fileData,
+                  fileName: file.name,
+                  mimeType: file.type
+                })
+              });
+              const data = await res.json();
+              if (data.success) uploadedCount++;
+            }
+            showToast(`Uploaded ${uploadedCount} photo(s) to cloud portfolio!`);
+            selectedPhotoFiles = [];
+            document.getElementById('newPhotoFileInput').value = '';
+            document.getElementById('selectedFilesInfo').innerText = 'Drag & drop or click to browse images';
+            document.getElementById('newPhotoTitle').value = '';
+            toggleAddPhotoForm();
+            loadCategoriesAndGalleries();
+          } catch (e) {
+            alert('Upload error: ' + e.message);
+          } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<span>Upload to Portfolio</span>';
+          }
+          return;
+        }
+
+        // Case 2: Adding via image URL
+        if (!urlInput) {
+          alert('Please select an image file to upload or enter an image URL.');
+          return;
+        }
+
+        const photoTitle = titleInput || `${categoryId.toUpperCase()} Photograph`;
+        btn.disabled = true;
+        try {
+          const res = await authFetch(`${API_HOST}/api/business/gallery`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              categoryId,
+              subcategoryId,
+              title: photoTitle,
+              imageUrl: urlInput
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast('New photo published to studio portfolio!');
+            document.getElementById('newPhotoTitle').value = '';
+            document.getElementById('newPhotoUrl').value = '';
+            toggleAddPhotoForm();
+            loadCategoriesAndGalleries();
+          } else {
+            alert(data.error || 'Failed to add photo');
+          }
+        } catch (e) {
+          alert('Error adding photo: ' + e.message);
+        } finally {
+          btn.disabled = false;
+        }
+      }
+            alert(data.error || 'Failed to add photo');
+          }
+        } catch (e) {
+          alert('Error adding photo: ' + e.message);
+        }
+      }
+
+      async function deleteGalleryPhoto(id, title) {
+        if (!confirm(`Delete photo "${title}" from portfolio? This immediately removes it from the customer mobile application.`)) return;
+        try {
+          const res = await authFetch(`${API_HOST}/api/business/gallery/${id}`, {
+            method: 'DELETE'
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast('Photo removed from portfolio');
+            loadCategoriesAndGalleries();
+          } else {
+            alert(data.error || 'Failed to delete photo');
+          }
+        } catch (e) {
+          alert('Error deleting photo');
+        }
+      }
+
+      // Initial Authentication Check
+      if (!getOwnerToken()) {
+        showOwnerLogin();
+      } else {
+        authFetch(`${API_HOST}/api/business/auth/verify`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.authenticated) {
+              hideOwnerLogin();
+              refreshData();
+            } else {
+              showOwnerLogin();
+            }
+          })
+          .catch(() => showOwnerLogin());
+      }
     </script>
   </body>
 </html>

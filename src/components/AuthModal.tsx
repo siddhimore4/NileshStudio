@@ -29,6 +29,33 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setError(null);
   };
 
+  // Graceful Guest Mode to explore categories and galleries freely without booking
+  const handleGuestExplore = () => {
+    const guestCustomer: Customer = {
+      id: `guest-${Date.now()}`,
+      fullName: 'Studio Guest',
+      phoneNumber: '',
+      email: undefined,
+      createdAt: new Date().toISOString(),
+      isGuest: true
+    };
+    onSuccess(guestCustomer);
+  };
+
+  // Fallback if backend is offline to browse galleries without being blocked
+  const handleOfflineContinue = () => {
+    const cleanPhone = phoneNumber.trim().replace(/\D/g, '') || '9876543210';
+    const guestCustomer: Customer = {
+      id: `offline-${Date.now()}`,
+      fullName: fullName.trim() || 'Studio Guest',
+      phoneNumber: cleanPhone,
+      email: email.trim() || undefined,
+      createdAt: new Date().toISOString(),
+      isGuest: true // Marked as guest: booking will require verified online registration
+    };
+    onSuccess(guestCustomer);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -128,9 +155,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
       {/* Form Error Message */}
       {error && (
-        <div className="mb-4 p-3 bg-red-950/60 border border-red-500/40 rounded-xl text-red-200 text-xs flex items-start space-x-2">
-          <span className="text-red-400 font-bold">!</span>
-          <span>{error}</span>
+        <div className="mb-4 p-3.5 bg-red-950/70 border border-red-500/40 rounded-xl text-red-200 text-xs flex flex-col space-y-2.5">
+          <div className="flex items-start space-x-2">
+            <span className="text-red-400 font-bold text-sm leading-none">!</span>
+            <span className="leading-relaxed">{error}</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleOfflineContinue}
+            className="self-end px-3 py-1.5 bg-gold-500/20 hover:bg-gold-500/30 border border-gold-400/50 rounded-lg text-gold-300 font-semibold text-[11px] transition-colors"
+          >
+            Continue in Offline Mode →
+          </button>
         </div>
       )}
 
@@ -222,7 +258,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </button>
       </form>
 
-      {/* Quick Demo Helper */}
+      {/* Quick Helpers */}
       <div className="mt-5 pt-4 border-t border-studio-800 flex items-center justify-between text-xs text-studio-400">
         <button
           type="button"
@@ -230,7 +266,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           className="text-gold-400 hover:text-gold-300 hover:underline flex items-center space-x-1"
         >
           <CheckCircle2 className="w-3.5 h-3.5" />
-          <span>Quick fill sample details</span>
+          <span>Quick fill sample</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleGuestExplore}
+          className="text-studio-400 hover:text-gold-400 flex items-center space-x-1"
+        >
+          <span>Explore as Guest →</span>
         </button>
 
         {onCancel && isModal && (

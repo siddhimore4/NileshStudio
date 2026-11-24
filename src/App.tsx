@@ -10,11 +10,24 @@ import { MyBookingsScreen } from './components/MyBookingsScreen';
 import { AuthModal } from './components/AuthModal';
 import { ProfileModal } from './components/ProfileModal';
 import { MobileFrame } from './components/MobileFrame';
+import { InstallAppModal } from './components/InstallAppModal';
+import { FALLBACK_CATEGORIES } from './data/fallbackCatalog';
 
 export function App() {
   const [customer, setCustomer] = useState<Customer | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loadingApp, setLoadingApp] = useState<boolean>(true);
+  const [categories, setCategories] = useState<Category[]>(() => {
+    try {
+      const cached = localStorage.getItem('nds_cached_categories');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      // fallback
+    }
+    return FALLBACK_CATEGORIES;
+  });
+  const [loadingApp, setLoadingApp] = useState<boolean>(false);
 
   // Navigation State
   const [activeTab, setActiveTab] = useState<'home' | 'categories' | 'booking' | 'my-bookings'>('home');
@@ -24,6 +37,7 @@ export function App() {
   // Modals
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
+  const [showInstallModal, setShowInstallModal] = useState<boolean>(false);
   const [upcomingBookingCount, setUpcomingBookingCount] = useState<number>(0);
 
   // 1. Initial Load: Retrieve stored customer session & load categories
@@ -40,12 +54,19 @@ export function App() {
         }
       }
 
-      // Load Categories from Backend
+      // Load Categories from Backend (network refresh with persistent cache)
       try {
         const fetchedCats = await api.getCategories();
-        setCategories(fetchedCats);
+        if (fetchedCats && Array.isArray(fetchedCats) && fetchedCats.length > 0) {
+          setCategories(fetchedCats);
+          try {
+            localStorage.setItem('nds_cached_categories', JSON.stringify(fetchedCats));
+          } catch (e) {
+            // ignore storage quota error
+          }
+        }
       } catch (err) {
-        console.error('Failed to load categories from API:', err);
+        console.warn('Network categories fetch failed, using cached/bundled catalog:', err);
       } finally {
         setLoadingApp(false);
       }
@@ -99,6 +120,10 @@ export function App() {
   };
 
   const handleOpenBooking = (categoryId?: string, subcategoryId?: string) => {
+    if (!customer || customer.isGuest || customer.id.startsWith('guest-') || customer.id.startsWith('offline-')) {
+      setShowAuthModal(true);
+      return;
+    }
     setBookingPreselect({ categoryId, subcategoryId });
     setViewingCategoryId(null);
     setActiveTab('booking');
@@ -157,6 +182,7 @@ export function App() {
           }}
           onOpenBooking={() => handleOpenBooking()}
           onNavigateHome={handleNavigateHome}
+          onOpenInstall={() => setShowInstallModal(true)}
         />
 
         {/* Main View Area */}
@@ -257,6 +283,10 @@ export function App() {
         <BottomNav
           activeTab={activeCategory ? 'categories' : activeTab}
           onSelectTab={(tab) => {
+            if ((tab === 'booking' || tab === 'my-bookings') && (!customer || customer.isGuest || customer.id.startsWith('guest-') || customer.id.startsWith('offline-'))) {
+              setShowAuthModal(true);
+              return;
+            }
             setViewingCategoryId(null);
             setActiveTab(tab);
           }}
@@ -280,6 +310,12 @@ export function App() {
             onUpdateSuccess={handleProfileUpdated}
           />
         )}
+
+        {/* Install App on Phone Modal */}
+        <InstallAppModal
+          isOpen={showInstallModal}
+          onClose={() => setShowInstallModal(false)}
+        />
       </div>
     </MobileFrame>
   );

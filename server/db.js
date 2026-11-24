@@ -1098,3 +1098,53 @@ export function updateStudioPaymentSettings({ qrCodeUrl, upiId, upiName }) {
   persist();
   return getStudioPaymentSettings();
 }
+
+// Studio owner: Get all gallery items with category information
+export function getAllGalleryItemsAdmin() {
+  const stmt = db.prepare(`
+    SELECT g.*, c.title as category_name, s.title as subcategory_name
+    FROM gallery_items g
+    JOIN categories c ON g.category_id = c.id
+    LEFT JOIN subcategories s ON g.subcategory_id = s.id AND s.category_id = g.category_id
+    ORDER BY g.category_id ASC, g.display_order ASC
+  `);
+  const items = [];
+  while (stmt.step()) {
+    items.push(stmt.getAsObject());
+  }
+  stmt.free();
+  return items;
+}
+
+// Studio owner: Add a new gallery item
+export function addGalleryItemAdmin({ categoryId, subcategoryId = null, imageUrl, title }) {
+  if (!categoryId || !imageUrl || !title) {
+    throw new Error('Category, Image URL, and Title are required');
+  }
+  const id = 'gal_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+  db.run(
+    "INSERT INTO gallery_items (id, category_id, subcategory_id, image_url, title, display_order) VALUES (?, ?, ?, ?, ?, ?)",
+    [id, categoryId, subcategoryId || null, imageUrl, title, 99]
+  );
+  persist();
+  return { id, category_id: categoryId, subcategory_id: subcategoryId, image_url: imageUrl, title };
+}
+
+// Studio owner: Get gallery item by id
+export function getGalleryItemById(id) {
+  const stmt = db.prepare("SELECT * FROM gallery_items WHERE id = ?");
+  stmt.bind([id]);
+  let item = null;
+  if (stmt.step()) item = stmt.getAsObject();
+  stmt.free();
+  return item;
+}
+
+// Studio owner: Delete a gallery item
+export function deleteGalleryItemAdmin(id) {
+  if (!id) throw new Error('Gallery item ID is required');
+  const existing = getGalleryItemById(id);
+  db.run("DELETE FROM gallery_items WHERE id = ?", [id]);
+  persist();
+  return { success: true, id, item: existing };
+}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, Calendar, User, Sparkles } from 'lucide-react';
+import { Camera, Calendar, User, Sparkles, Smartphone } from 'lucide-react';
 import { Customer } from '../types';
 
 interface HeaderProps {
@@ -7,6 +7,7 @@ interface HeaderProps {
   onOpenProfile: () => void;
   onOpenBooking: () => void;
   onNavigateHome: () => void;
+  onOpenInstall?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -14,6 +15,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenProfile,
   onOpenBooking,
   onNavigateHome,
+  onOpenInstall,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-studio-950/85 backdrop-blur-md border-b border-gold-500/15">
@@ -45,6 +47,17 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Quick Actions */}
         <div className="flex items-center space-x-2">
+          {onOpenInstall && (
+            <button
+              onClick={onOpenInstall}
+              className="flex items-center space-x-1.5 bg-gold-500/10 hover:bg-gold-500/20 text-gold-400 border border-gold-500/30 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 shadow-sm"
+              title="Install App on Phone"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline sm:inline">Get App</span>
+            </button>
+          )}
+
           <button
             onClick={onOpenBooking}
             className="hidden sm:flex items-center space-x-1.5 bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-400 hover:to-gold-500 text-studio-950 font-semibold text-xs px-3.5 py-2 rounded-lg shadow-sm transition-all duration-200"

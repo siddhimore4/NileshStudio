@@ -278,7 +278,7 @@ export const BookingScreen: React.FC<BookingScreenProps> = ({
     e.preventDefault();
     setBookingError(null);
 
-    if (!customer) {
+    if (!customer || customer.isGuest || customer.id.startsWith('guest-') || customer.id.startsWith('offline-')) {
       onRequireAuth();
       return;
     }

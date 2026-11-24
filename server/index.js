@@ -25,8 +25,12 @@ import {
   rejectPaymentAdmin,
   markPaidAfterShootAdmin,
   getStudioPaymentSettings,
-  updateStudioPaymentSettings
+  updateStudioPaymentSettings,
+  getAllGalleryItemsAdmin,
+  addGalleryItemAdmin,
+  deleteGalleryItemAdmin
 } from './db.js';
+import { uploadPhoto, deletePhoto, VALID_FOLDERS } from './storage.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,6 +39,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
+app.use((req, res, next) => {
+  console.log(`[REQ] ${req.method} ${req.url} (from ${req.ip})`);
+  next();
+});
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -50,9 +58,15 @@ app.use('/business', express.static(businessPortalDir));
 const publicDir = path.join(__dirname, '..', 'public');
 app.use(express.static(publicDir));
 
-// Serve customer app production build if available
+// Serve customer app production build (supports PWA install on iPhone & Android)
 const distDir = path.join(__dirname, '..', 'dist');
 app.use(express.static(distDir));
+
+// Serve standalone Android APK direct download
+app.get(['/download/apk', '/NileshStudio.apk', '/download'], (req, res) => {
+  const apkPath = path.join(__dirname, '..', 'NileshStudio.apk');
+  res.download(apkPath, 'NileshStudio.apk');
+});
 
 // --- CUSTOMER APP API ENDPOINTS ---
 
@@ -176,6 +190,119 @@ app.patch('/api/bookings/:id/cancel', (req, res) => {
 
 // --- STANDALONE BUSINESS OWNER PORTAL API ENDPOINTS ---
 // (Completely separate from customer flow)
+
+const activeOwnerTokens = new Set();
+const DEFAULT_OWNER_PASS = process.env.OWNER_PASSWORD || 'nilesh@2026';
+const DEFAULT_OWNER_USER = process.env.OWNER_USERNAME || 'admin';
+
+// Business Portal Authentication Middleware
+function requireOwnerAuth(req, res, next) {
+  // Allow login endpoint without token
+  if (req.path === '/auth/login' || req.path === '/api/business/auth/login') {
+    return next();
+  }
+  const authHeader = req.headers['authorization'] || req.headers['x-owner-token'];
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+  if (!token || !activeOwnerTokens.has(token)) {
+    return res.status(401).json({ error: 'Unauthorized: Studio Owner login required' });
+  }
+  next();
+}
+
+app.use('/api/business', requireOwnerAuth);
+
+// Business Owner Login Endpoint
+app.post('/api/business/auth/login', (req, res) => {
+  const { username, password } = req.body;
+  if (
+    (!username || username === DEFAULT_OWNER_USER || username === 'nilesh') &&
+    password === DEFAULT_OWNER_PASS
+  ) {
+    const token = 'nds_sec_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 10);
+    activeOwnerTokens.add(token);
+    return res.json({
+      success: true,
+      token,
+      owner: { username: DEFAULT_OWNER_USER, name: 'Nilesh Studio Owner', role: 'owner' }
+    });
+  }
+  return res.status(401).json({ error: 'Invalid owner credentials' });
+});
+
+// Business Owner Verify Session Endpoint
+app.get('/api/business/auth/verify', (req, res) => {
+  res.json({ success: true, authenticated: true });
+});
+
+// Business Owner Logout Endpoint
+app.post('/api/business/auth/logout', (req, res) => {
+  const authHeader = req.headers['authorization'] || req.headers['x-owner-token'];
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : authHeader;
+  if (token) activeOwnerTokens.delete(token);
+  res.json({ success: true });
+});
+
+// Gallery Management endpoints for Business Owner
+app.get('/api/business/gallery/all', (req, res) => {
+  try {
+    const items = getAllGalleryItemsAdmin();
+    res.json({ success: true, items });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/business/gallery', (req, res) => {
+  try {
+    const { categoryId, subcategoryId, imageUrl, title } = req.body;
+    const item = addGalleryItemAdmin({ categoryId, subcategoryId, imageUrl, title });
+    res.json({ success: true, item });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Upload and add photo (Supabase Storage or cloud fallback)
+app.post('/api/business/gallery/upload', async (req, res) => {
+  try {
+    const { categoryId, subcategoryId, title, fileData, fileName, mimeType } = req.body;
+    if (!categoryId || !fileData) {
+      return res.status(400).json({ error: 'Category and image data are required.' });
+    }
+    const cleanBase64 = fileData.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(cleanBase64, 'base64');
+    const folder = subcategoryId || categoryId;
+    const uploadRes = await uploadPhoto({
+      fileBuffer: buffer,
+      fileName: fileName || `${folder}.jpg`,
+      mimeType: mimeType || 'image/jpeg',
+      folder
+    });
+    const photoTitle = title || `${folder.toUpperCase()} Photograph`;
+    const item = addGalleryItemAdmin({
+      categoryId,
+      subcategoryId: subcategoryId || null,
+      imageUrl: uploadRes.url,
+      title: photoTitle
+    });
+    res.json({ success: true, item, upload: uploadRes });
+  } catch (err) {
+    console.error('Gallery upload error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/business/gallery/:id', async (req, res) => {
+  try {
+    const result = deleteGalleryItemAdmin(req.params.id);
+    if (result.item && result.item.image_url) {
+      await deletePhoto(result.item.image_url);
+    }
+    res.json({ success: true, result });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
 
 app.get('/api/business/bookings', (req, res) => {
   try {
@@ -349,7 +476,21 @@ app.get('*', (req, res) => {
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'Endpoint not found' });
   }
+  if (req.path.startsWith('/business')) {
+    return res.sendFile(path.join(businessPortalDir, 'index.html'));
+  }
   res.sendFile(path.join(distDir, 'index.html'));
+});
+
+// Global JSON Error Handler (Guarantees API errors are always returned as JSON, never HTML)
+app.use((err, req, res, next) => {
+  console.error('[API ERROR]', err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(err.status || 500).json({
+    error: err.message || 'An unexpected server error occurred.'
+  });
 });
 
 // Start Express Server

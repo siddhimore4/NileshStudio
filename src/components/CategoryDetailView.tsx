@@ -3,6 +3,7 @@ import { ArrowLeft, Calendar, Sparkles, Eye, Camera, Heart, CheckCircle2 } from 
 import { Category, Subcategory, GalleryItem } from '../types';
 import { api } from '../api';
 import { LightboxModal } from './LightboxModal';
+import { FALLBACK_GALLERY_ITEMS } from '../data/fallbackCatalog';
 
 interface CategoryDetailViewProps {
   category: Category;
@@ -32,13 +33,30 @@ export const CategoryDetailView: React.FC<CategoryDetailViewProps> = ({
       try {
         if (isIndoorOrOutdoor) {
           const items = await api.getGallery(category.id, selectedSubcatId || undefined);
-          setGalleryItems(items);
+          if (items && items.length > 0) {
+            setGalleryItems(items);
+          } else {
+            // fallback if empty
+            const fallback = FALLBACK_GALLERY_ITEMS.filter(
+              g => g.category_id === category.id && g.subcategory_id === selectedSubcatId
+            );
+            setGalleryItems(fallback);
+          }
         } else {
           const items = await api.getGallery(category.id);
-          setGalleryItems(items);
+          if (items && items.length > 0) {
+            setGalleryItems(items);
+          } else {
+            const fallback = FALLBACK_GALLERY_ITEMS.filter(g => g.category_id === category.id);
+            setGalleryItems(fallback);
+          }
         }
       } catch (err) {
-        console.error('Failed to load gallery items:', err);
+        console.warn('Network gallery fetch failed, using bundled gallery:', err);
+        const fallback = isIndoorOrOutdoor
+          ? FALLBACK_GALLERY_ITEMS.filter(g => g.category_id === category.id && g.subcategory_id === selectedSubcatId)
+          : FALLBACK_GALLERY_ITEMS.filter(g => g.category_id === category.id);
+        setGalleryItems(fallback);
       } finally {
         setLoading(false);
       }

@@ -31,18 +31,23 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Pass API requests directly to network
+  // Never intercept or cache API requests
   if (event.request.url.includes('/api/')) {
+    return;
+  }
+
+  // Only handle GET requests
+  if (event.request.method !== 'GET') {
     return;
   }
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request).then((response) => {
-        return response;
-      });
+      return cached || fetch(event.request);
     }).catch(() => {
-      return caches.match('/');
+      if (event.request.mode === 'navigate') {
+        return caches.match('/');
+      }
     })
   );
 });
