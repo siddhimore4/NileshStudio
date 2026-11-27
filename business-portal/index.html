@@ -1673,12 +1673,6 @@
           btn.disabled = false;
         }
       }
-            alert(data.error || 'Failed to add photo');
-          }
-        } catch (e) {
-          alert('Error adding photo: ' + e.message);
-        }
-      }
 
       async function deleteGalleryPhoto(id, title) {
         if (!confirm(`Delete photo "${title}" from portfolio? This immediately removes it from the customer mobile application.`)) return;
