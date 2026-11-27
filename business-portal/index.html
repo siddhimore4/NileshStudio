@@ -684,7 +684,18 @@
     <script>
       let currentFilter = 'All';
       let searchQuery = '';
-      const API_HOST = window.location.origin;
+      const API_HOST = (function() {
+        if (typeof window === 'undefined') return 'http://localhost:5000';
+        const custom = localStorage.getItem('nds_business_api_host');
+        if (custom && custom.trim() !== '') return custom.replace(/\/$/, '');
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          return window.location.origin;
+        }
+        if (window.location.origin.includes('onrender.com') || window.location.origin.includes('trycloudflare.com')) {
+          return window.location.origin;
+        }
+        return 'https://nilesh-studio-app.onrender.com';
+      })();
 
       let activeRescheduleBooking = null;
       let selectedRescheduleSlot = null;

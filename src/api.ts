@@ -56,7 +56,7 @@ async function fetchJson<T = any>(endpointOrUrl: string, options?: RequestInit):
   let res: Response;
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
     res = await fetch(url, { ...options, signal: controller.signal });
     clearTimeout(timeoutId);
   } catch (err: any) {
